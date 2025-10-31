@@ -1,0 +1,9 @@
+---
+title: "Topic + Workflow Proposal"
+output: html_document
+date: "2025-10-31"
+---
+Topic: Investigating plant-pollinator networks in collected HJA samples, focusing bumble bee networks throughout time. 
+Workflow Proposal: Get access to the HJA data from all years
+Clean up the data by only selecting for bumble bee species 
+figure out which years to look at
