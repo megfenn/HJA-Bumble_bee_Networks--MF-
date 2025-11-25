@@ -1,0 +1,122 @@
+---
+title: "HJA_Bumble_bee_Networks_markdown"
+output: html_document
+date: "2025-11-25"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+setwd("C:/Users/Owner/Documents/UO Master's/Classes/Data Science Eco Conserv/Final Project/HJA-Bumble_bee_Networks--MF-")
+load("C:\\Users\\Owner\\University of Oregon Dropbox\\Megan Fenner\\cascades-meadows\\data\\spec_net.Rdata")
+load("C:/Users/Owner/Downloads/Year_PlantPollinator_Bumblebees.Rdata")
+load("C:/Users/Owner/Downloads/Year_PlantPollinator_Bumblebees (1).Rdata")
+source("C:\\Users\\Owner\\University of Oregon Dropbox\\Megan Fenner\\cascades-meadows\\dataPrep\\src\\prepNets.R")
+source("C:\\Users\\Owner\\University of Oregon Dropbox\\Megan Fenner\\cascades-meadows\\dataPrep\\src\\misc.R")
+source("C:\\Users\\Owner\\University of Oregon Dropbox\\Megan Fenner\\cascades-meadows\\dataPrep\\src\\specialization.R")
+install.packages("ggpubr")
+install.packages("patchwork")
+install.packages("ggforce")
+library(dplyr)
+library(tidyr)
+library(ggpubr)
+library(patchwork)
+library(ggforce)
+
+```
+
+```{r}
+which(is.na(sp.lev), arr.ind = TRUE) #gives the specific instances of 
+# #where NA values are
+names(sp.lev)[colSums(is.na(sp.lev)) > 0] #gives the column names of where NA is, by
+# #summing the columns where NA appears, such that if NA is there, it is assigned a value of 1, and 
+# #therefore, is then greater than 0.
+ 
+plant_poll_adj <- sp.lev %>% #this row replaces all the NAs in each column with 0s
+   mutate(node.specialisation.index.NSI = replace_na(node.specialisation.index.NSI, 0)) %>%
+   mutate(weighted.betweenness = replace_na(weighted.betweenness, 0)) %>%
+   mutate(closeness = replace_na(closeness, 0)) %>%
+   mutate(weighted.closeness = replace_na(weighted.closeness, 0)) %>%
+   mutate(d = replace_na(d, 0)) 
+```
+
+```{r}
+#to check for the unique sites- as in following years, 12 sites got reduced to 10
+unique(plant_poll_adj$Site)
+
+#only focus on the GenusSpecies data with "Bombus" as the genus
+bumblebee_adj <- plant_poll_adj %>%
+  #using grepl is a function that acts like a regular expression, looking for instances
+  #where there are specific strings of text- in this case, all instances of Bombus +
+  #the species name-- this regular expression also removes instances of just "Bombus"
+  filter(grepl("^Bombus\\s+\\w+", GenusSpecies))
+
+#checking to see if there are only Bombus in the code
+unique(bumblebee_adj$GenusSpecies)
+
+unique(bumblebee_adj$Year)
+```
+
+```{r}
+#the count of some of the bumble bees are low- not many were caught of certain species. 
+#Here, I have filtered out the species where the count is greater than or equal to 5. 
+Bumble_count <- bumblebee_adj %>%
+  group_by(GenusSpecies) %>%
+  summarize(occ = n()) %>%
+  ungroup() %>%
+  filter(occ >= 5)
+
+Bumble_count_more <- bumblebee_adj %>%
+  group_by(GenusSpecies) %>%
+  summarize(occ = n()) %>%
+  ungroup() %>%
+  filter(occ >= 10)
+
+#comparing the output to see how many bumble bee species are dropped when filtered 
+sort(unique(bumblebee_adj$GenusSpecies))
+sort(unique(Bumble_count$GenusSpecies))
+sort(unique(Bumble_count_more$GenusSpecies))
+
+bumbles_to_keep <- c(
+  "Bombus californicus", "Bombus fernaldae", "Bombus flavidus",
+  "Bombus flavifrons", "Bombus insularis", "Bombus melanopygus",
+  "Bombus mixtus", "Bombus sitkensis", "Bombus vancouverensis",
+  "Bombus vosnesenskii"
+)
+
+less_bumbles_to_keep <- c(
+  "Bombus californicus",
+  "Bombus flavifrons", "Bombus melanopygus",
+  "Bombus mixtus", "Bombus vancouverensis",
+  "Bombus vosnesenskii"
+)
+
+#Using filter allows for the instances of the species listed in bumble_to_keep 
+#to be sought in the GenusSpecies column, and using "in" filters for those
+#names in the bumblebee_adj data frame.
+bumblebees_adj <- bumblebee_adj %>%
+  filter(GenusSpecies %in% less_bumbles_to_keep)
+
+#fortuitously, there are now only 10 bumble bee species which are being kept!
+sort(unique(bumblebees_adj$GenusSpecies))
+#the graphs are not working
+bumblebees_adj$Year <- as.numeric(bumblebees_adj$Year)  
+
+```
+
+```{r}
+#the bumblebees_adj data did not have the complex data- here, we are telling R to
+#create a new column using mutate, creating a new column called "Complex", and
+#in the complex column, we are assigning the values to correspond with data in
+#the site column, such that when there is a certain site, it gets assigned its
+#corresponding complex name.
+bumblebees_adj <- bumblebees_adj %>%
+  mutate(Complex = case_when(
+    Site %in% c("CPB", "CPM", "CPR", "CPS") ~ "Carpenter",
+    Site %in% c("LM", "LS", "LO", "LB") ~ "Lookout",
+    Site %in% c("RP1", "RP2", "M2", "NE") ~ "Frissell",
+    TRUE ~ "Other"
+  ))
+```
