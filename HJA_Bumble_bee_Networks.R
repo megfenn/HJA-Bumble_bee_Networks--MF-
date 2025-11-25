@@ -1,126 +1,378 @@
-knitr::purl("C:/Users/Owner/University of Oregon Dropbox/Megan Fenner/cascades-meadows/dataPrep/1_specimenPrep.R")
-source(spec.net)
-save(spec.net, file = "spec.net.RData")
-spec.net.data <- load("spec.net.RData")
+setwd("C:/Users/Owner/Documents/UO Master's/Classes/Data Science Eco Conserv/Final Project/HJA-Bumble_bee_Networks--MF-")
+load("C:\\Users\\Owner\\University of Oregon Dropbox\\Megan Fenner\\cascades-meadows\\data\\spec_net.Rdata")
+load("C:/Users/Owner/Downloads/Year_PlantPollinator_Bumblebees.Rdata")
+load("C:/Users/Owner/Downloads/Year_PlantPollinator_Bumblebees (1).Rdata")
+source("C:\\Users\\Owner\\University of Oregon Dropbox\\Megan Fenner\\cascades-meadows\\dataPrep\\src\\prepNets.R")
+source("C:\\Users\\Owner\\University of Oregon Dropbox\\Megan Fenner\\cascades-meadows\\dataPrep\\src\\misc.R")
+source("C:\\Users\\Owner\\University of Oregon Dropbox\\Megan Fenner\\cascades-meadows\\dataPrep\\src\\specialization.R")
+install.packages("ggpubr")
+install.packages("patchwork")
+install.packages("ggforce")
+library(dplyr)
+library(tidyr)
+library(ggpubr)
+library(patchwork)
+library(ggforce)
 
-load("spec.net.RData")  # loads spec.net into environment
-HJA_bumblebees <- spec.net[spec.net$Genus == "Bombus", ] #this worked! It created a dataframe HJA 
-#that only has the data for Bombus. Question is... can I then group?
-HJA_bumblebees <- HJA_bumblebees[ , c("Year", "Site", "SampleRound", "Date", "SiteSampleYear", "GenusSpecies", 
-                                      "PlantGenus", "PlantGenusSpecies", "Genus", "Complex")]
-#so what was happening before was it wasn't recognizing the names of the columns when I was telling
-#it to look for these columns, as is listed above. So, now we've created a vector that is all
-#the names of the columns. 
-cols_to_keep <- c("Year", "Site", "SampleRound", "Date", "SiteSampleYear", 
-                  "GenusSpecies", "PlantGenus", "PlantGenusSpecies", 
-                  "Genus", "Complex")
-#Now, we say for in the HJA_bumblebees data, for all the rows, intersect the column names that
-#we have established with the names in the HJA data set. 
-HJA_bumblebees <- HJA_bumblebees[, intersect(cols_to_keep, names(HJA_bumblebees))]
 
-#Function that might be used to create the adjacency matrix:
-makeNets <- function(spec.dat, net.type,
-                     species=c("Plant", "Pollinator"),
-                     poll.groups="all", mean.by.year=FALSE,
-                     ...){
-  ## 1. spec.data: the specimen data, can be all groups, only bees
-  ## etc.
-  ## 2. net.type: a character string, "YearSR"= create networks by year
-  ## and sampling round or "Year" by year.
-  ## 3. species: a vector with two entries, c("Plant", "Pollinator"),
-  ## or c("Pollinator", "Parasite")
-  ## 4. poll.groups: a character string for naming the
-  ## networks. Should correspond to what specimen data subset was
-  ## passed in, i.e., "all", "bees"
-  spec.dat$YearSR <- paste(spec.dat$Year, spec.dat$SampleRound, sep=".")
-  nets <- breakNet(spec.dat, site='Site', year=net.type,
-                   mean.by.year=mean.by.year, ...)
-  nets <- lapply(nets, bipartite::empty)
+
+which(is.na(sp.lev), arr.ind = TRUE) #gives the specific instances of 
+# #where NA values are
+names(sp.lev)[colSums(is.na(sp.lev)) > 0] #gives the column names of where NA is, by
+# #summing the columns where NA appears, such that if NA is there, it is assigned a value of 1, and 
+# #therefore, is then greater than 0.
+ 
+plant_poll_adj <- sp.lev %>% #this row replaces all the NAs in each column with 0s
+   mutate(node.specialisation.index.NSI = replace_na(node.specialisation.index.NSI, 0)) %>%
+   mutate(weighted.betweenness = replace_na(weighted.betweenness, 0)) %>%
+   mutate(closeness = replace_na(closeness, 0)) %>%
+   mutate(weighted.closeness = replace_na(weighted.closeness, 0)) %>%
+   mutate(d = replace_na(d, 0)) 
+
+#to check for the unique sites- as in following years, 12 sites got reduced to 10
+unique(plant_poll_adj$Site)
+
+#only focus on the GenusSpecies data with "Bombus" as the genus
+bumblebee_adj <- plant_poll_adj %>%
+  #using grepl is a function that acts like a regular expression, looking for instances
+  #where there are specific strings of text- in this case, all instances of Bombus +
+  #the species name-- this regular expression also removes instances of just "Bombus"
+  filter(grepl("^Bombus\\s+\\w+", GenusSpecies))
+
+#checking to see if there are only Bombus in the code
+unique(bumblebee_adj$GenusSpecies)
+
+unique(bumblebee_adj$Year)
+
+#the count of some of the bumble bees are low- not many were caught of certain species. 
+#Here, I have filtered out the species where the count is greater than or equal to 5. 
+Bumble_count <- bumblebee_adj %>%
+  group_by(GenusSpecies) %>%
+  summarize(occ = n()) %>%
+  ungroup() %>%
+  filter(occ >= 5)
+
+Bumble_count_more <- bumblebee_adj %>%
+  group_by(GenusSpecies) %>%
+  summarize(occ = n()) %>%
+  ungroup() %>%
+  filter(occ >= 10)
+
+#comparing the output to see how many bumble bee species are dropped when filtered 
+sort(unique(bumblebee_adj$GenusSpecies))
+sort(unique(Bumble_count$GenusSpecies))
+sort(unique(Bumble_count_more$GenusSpecies))
+
+bumbles_to_keep <- c(
+  "Bombus californicus", "Bombus fernaldae", "Bombus flavidus",
+  "Bombus flavifrons", "Bombus insularis", "Bombus melanopygus",
+  "Bombus mixtus", "Bombus sitkensis", "Bombus vancouverensis",
+  "Bombus vosnesenskii"
+)
+
+less_bumbles_to_keep <- c(
+  "Bombus californicus",
+  "Bombus flavifrons", "Bombus melanopygus",
+  "Bombus mixtus", "Bombus vancouverensis",
+  "Bombus vosnesenskii"
+)
+
+#Using filter allows for the instances of the species listed in bumble_to_keep 
+#to be sought in the GenusSpecies column, and using "in" filters for those
+#names in the bumblebee_adj data frame.
+bumblebees_adj <- bumblebee_adj %>%
+  filter(GenusSpecies %in% less_bumbles_to_keep)
+
+#fortuitously, there are now only 10 bumble bee species which are being kept!
+sort(unique(bumblebees_adj$GenusSpecies))
+#the graphs are not working
+bumblebees_adj$Year <- as.numeric(bumblebees_adj$Year)  
+
+
+#the bumblebees_adj data did not have the complex data- here, we are telling R to
+#create a new column using mutate, creating a new column called "Complex", and
+#in the complex column, we are assigning the values to correspond with data in
+#the site column, such that when there is a certain site, it gets assigned its
+#corresponding complex name.
+bumblebees_adj <- bumblebees_adj %>%
+  mutate(Complex = case_when(
+    Site %in% c("CPB", "CPM", "CPR", "CPS") ~ "Carpenter",
+    Site %in% c("LM", "LS", "LO", "LB") ~ "Lookout",
+    Site %in% c("RP1", "RP2", "M2", "NE") ~ "Frissell",
+    TRUE ~ "Other"
+  ))
+
+
+#Effective Partners
+ggplot(data= bumblebees_adj, aes( x = Year, y = effective.partners, color = Site, shape = GenusSpecies))+
+  geom_jitter()+
+  geom_smooth(aes(group = Complex), method = "lm", formula = y ~ x, color = "black") +
+  stat_cor(
+    inherit.aes = FALSE,                         
+    aes(x = Year, y = effective.partners, label = ..p.label..),
+    label.x.npc = "left",
+    size = 8)+
+  scale_x_continuous(breaks=seq(2011, 2024, by=2))+
+  facet_wrap(~ Complex)+
+  theme_minimal()+
+  theme(strip.text = element_text(size = 16, face = "bold"),
+        axis.title.x = element_text(size= 18, face = "bold"),
+        axis.title.y = element_text(size=18, face = "bold"), 
+        legend.title = element_text(size = 18), 
+        legend.text = element_text(size = 16))+
+  labs(y = "Effective Partners", shape = "Bumble bees")+
+  scale_shape_discrete(labels = c(expression(italic("Bombus californicus")),
+                                  expression(italic("Bombus flavifrons")),
+                                  expression(italic("Bombus melanopygus")),
+                                  expression(italic("Bombus mixtus")),
+                                  expression(italic("Bombus vancouverensis")),
+                                  expression(italic("Bombus vosnesenskii"))))
+
+
+ggplot(data= bumblebees_adj, aes( x = Year, y = effective.partners, color = Site, shape = GenusSpecies))+
+  geom_jitter()+
+  geom_smooth(aes(group = Complex), method = "lm", formula = y ~ x, color = "black") +
+  stat_cor(
+    inherit.aes = FALSE,                         
+    aes(x = Year, y = effective.partners, label = ..p.label..),
+    label.x.npc = "left",
+    size = 8)+
+  scale_x_continuous(breaks=seq(2011, 2024, by=2))+
+  facet_wrap_paginate(~ Complex, ncol = 1, nrow = 1, page = 2) +
+  theme_minimal()+
+  theme(strip.text = element_text(size = 16, face = "bold"),
+        axis.title.x = element_text(size= 18, face = "bold"),
+        axis.title.y = element_text(size=18, face = "bold"), 
+        legend.title = element_text(size = 18), 
+        legend.text = element_text(size = 16))+
+  labs(y = "Effective Partners", shape = "Bumble bees")+
+  scale_shape_discrete(labels = c(expression(italic("Bombus californicus")),
+                                  expression(italic("Bombus flavifrons")),
+                                  expression(italic("Bombus melanopygus")),
+                                  expression(italic("Bombus mixtus")),
+                                  expression(italic("Bombus vancouverensis")),
+                                  expression(italic("Bombus vosnesenskii"))))
+
+
+
+
+
+
+ggsave("C:/Users/Owner/Documents/UO Master's/Classes/Data Science Eco Conserv/Final Project/graphs_p_values/Effective Partners_Frissell.jpg", plot = last_plot(), width = 12, height = 8,dpi = 300)
+
+#PSI
   
-  ## graphs
-  nets.graph <- lapply(nets, graph_from_incidence_matrix,
-                       weighted =   TRUE, directed = FALSE)
-  nets.graph <-  lapply(nets.graph, function(x){
-    vertex_attr(x)$type[vertex_attr(x)$type] <- species[2]
-    vertex_attr(x)$type[vertex_attr(x)$type
-                        != species[2]] <- species[1]
-    return(x)
-  })
-}
+ggplot(data= bumblebees_adj, aes( x = Year, y = PSI, color = Site, shape = GenusSpecies))+
+  geom_jitter()+
+  geom_smooth(aes(group = Complex), method = "lm", formula = y ~ x, color = "black") +
+  stat_cor(
+    inherit.aes = FALSE,                         
+    aes(x = Year, y = PSI, label = ..p.label..),
+    label.x.npc = "left", 
+    size = 8)+
+  scale_x_continuous(breaks=seq(2011, 2024, by=2))+
+  facet_wrap(~ Complex)+
+  theme_minimal()+
+  theme(strip.text = element_text(size = 16, face = "bold"),
+        axis.title.x = element_text(size= 18, face = "bold"),
+        axis.title.y = element_text(size=18, face = "bold"), 
+        legend.title = element_text(size = 18), 
+        legend.text = element_text(size = 16))+
+  labs(y = "PSI", shape = "Bumble bees")+
+  scale_shape_discrete(labels = c(expression(italic("Bombus californicus")),
+                                  expression(italic("Bombus flavifrons")),
+                                  expression(italic("Bombus melanopygus")),
+                                  expression(italic("Bombus mixtus")),
+                                  expression(italic("Bombus vancouverensis")),
+                                  expression(italic("Bombus vosnesenskii"))))
 
+ggsave("C:/Users/Owner/Documents/UO Master's/Classes/Data Science Eco Conserv/Final Project/graphs_p_values/PSI.jpg", plot = last_plot(), width = 12, height = 8,dpi = 300)
 
-
-
-makeNets <- function(spec.dat, net.type,
-                     species=c("Plant", "Pollinator"),
-                     poll.groups="all", mean.by.year=FALSE,
-                     ...){
-  ## 1. spec.data: the specimen data, can be all groups, only bees
-  ## etc.
-  ## 2. net.type: a character string, "YearSR"= create networks by year
-  ## and sampling round or "Year" by year.
-  ## 3. species: a vector with two entries, c("Plant", "Pollinator"),
-  ## or c("Pollinator", "Parasite")
-  ## 4. poll.groups: a character string for naming the
-  ## networks. Should correspond to what specimen data subset was
-  ## passed in, i.e., "all", "bees"
-  spec.dat$YearSR <- paste(spec.dat$Year, spec.dat$SampleRound, sep=".")
-  nets <- breakNet(spec.dat, site='Site', year=net.type,
-                   mean.by.year=mean.by.year, ...)
-  nets <- lapply(nets, bipartite::empty)
+#PDI
   
-  ## graphs
-  nets.graph <- lapply(nets, graph_from_incidence_matrix,
-                       weighted =   TRUE, directed = FALSE)
-  nets.graph <-  lapply(nets.graph, function(x){
-    vertex_attr(x)$type[vertex_attr(x)$type] <- species[2]
-    vertex_attr(x)$type[vertex_attr(x)$type
-                        != species[2]] <- species[1]
-    return(x)
-  })
+ggplot(data= bumblebees_adj, aes( x = Year, y = PDI, color = Site, shape = GenusSpecies))+
+  geom_jitter()+
+  geom_smooth(aes(group = Complex), method = "lm", formula = y ~ x, color = "black") +
+  stat_cor(
+    inherit.aes = FALSE,                         
+    aes(x = Year, y = PDI, label = ..p.label..),
+    label.x.npc = "left", 
+    label.y.npc = "bottom", 
+    size = 8)+
+  scale_x_continuous(breaks=seq(2011, 2024, by=2))+
+  facet_wrap_paginate(~ Complex, ncol = 1, nrow = 1, page = 1) +
+  theme_minimal()+
+  theme(strip.text = element_text(size = 16, face = "bold"),
+        axis.title.x = element_text(size= 18, face = "bold"),
+        axis.title.y = element_text(size=18, face = "bold"), 
+        legend.title = element_text(size = 18), 
+        legend.text = element_text(size = 16))+
+  labs(y = "PDI", shape = "Bumble bees")+
+  scale_shape_discrete(labels = c(expression(italic("Bombus californicus")),
+                                  expression(italic("Bombus flavifrons")),
+                                  expression(italic("Bombus melanopygus")),
+                                  expression(italic("Bombus mixtus")),
+                                  expression(italic("Bombus vancouverensis")),
+                                  expression(italic("Bombus vosnesenskii"))))
+
+ggsave("C:/Users/Owner/Documents/UO Master's/Classes/Data Science Eco Conserv/Final Project/graphs_p_values/PDI_Carpenter.jpg", plot = last_plot(), width = 12, height = 8,dpi = 300)
+
+#Closeness
   
-  ## unweighted
-  nets.graph.uw <- lapply(nets, graph_from_incidence_matrix,
-                          directed = FALSE)
-  nets.graph.uw <-  lapply(nets.graph.uw, function(x){
-    vertex_attr(x)$type[vertex_attr(x)$type] <- species[2]
-    vertex_attr(x)$type[vertex_attr(x)$type
-                        != species[2]] <- species[1]
-    return(x)
-  })
-  
-  years <- sapply(strsplit(names(nets), "[.]"), function(x) x[[2]])
-  sites <- sapply(strsplit(names(nets), "[.]"), function(x) x[[1]])
-  
-  if(net.type == "YearSR" & mean.by.year == FALSE){
-    SRs <- sapply(strsplit(names(nets), "[.]"), function(x) x[[3]])
-  } else{
-    SRs <- NA
-  }
-  if(mean.by.year){
-    net.ty <- "Year"
-  } else {
-    net.ty <- net.type
-  }
-  
-  save(nets.graph,nets.graph.uw, nets, years, sites, SRs,
-       file=sprintf("../data/networks/%s_%s_%s.Rdata", net.ty,
-                    paste(species, collapse=""), poll.groups
-       ))
-  
-  ## species stats
-  sp.lev <- calcSpec(nets)
-  save(sp.lev,
-       file=sprintf('../data/splevel_network_metrics/%s_%s_%s.Rdata',
-                    net.ty,
-                    paste(species, collapse=""), poll.groups
-       ))
-  return(sp.lev)
-}
+ggplot(data= bumblebees_adj, aes( x = Year, y = closeness, color = Site, shape = GenusSpecies))+
+  geom_jitter()+
+  geom_smooth(aes(group = Complex), method = "lm", formula = y ~ x, color = "black") +
+    stat_cor(
+    inherit.aes = FALSE,                         
+    aes(x = Year, y = closeness, label = ..p.label..),
+    label.x.npc = "left",
+    size = 8)+
+  scale_x_continuous(breaks=seq(2011, 2024, by=2))+
+  facet_wrap_paginate(~ Complex, ncol = 1, nrow = 1, page = 1) +
+  theme_minimal()+
+  theme(strip.text = element_text(size = 16, face = "bold"),
+        axis.title.x = element_text(size= 18, face = "bold"),
+        axis.title.y = element_text(size=18, face = "bold"), 
+        legend.title = element_text(size = 18), 
+        legend.text = element_text(size = 16))+
+  labs(y = "Closeness", shape = "Bumble bees")+
+  scale_shape_discrete(labels = c(expression(italic("Bombus californicus")),
+                                     expression(italic("Bombus flavifrons")),
+                                     expression(italic("Bombus melanopygus")),
+                                     expression(italic("Bombus mixtus")),
+                                     expression(italic("Bombus vancouverensis")),
+                                     expression(italic("Bombus vosnesenskii"))))
+#only Carpenter is significant
+ggsave("C:/Users/Owner/Documents/UO Master's/Classes/Data Science Eco Conserv/Final Project/graphs_p_values/Closeness_Carpenter.jpg", plot = last_plot(), width = 12, height = 8,dpi = 300)
+
+#Species Strength
+ggplot(data= bumblebees_adj, aes( x = Year, y = species.strength, color = Site, shape = GenusSpecies))+
+  geom_jitter()+
+  geom_smooth(aes(group = Complex), method = "lm", formula = y ~ x, color = "black") +
+  stat_cor(
+    inherit.aes = FALSE,                         
+    aes(x = Year, y = species.strength, label = ..p.label..),
+    label.x.npc = "left", 
+    size =8)+
+  scale_x_continuous(breaks=seq(2011, 2024, by=2))+
+  facet_wrap(~ Complex)+
+  theme_minimal()+
+  theme(strip.text = element_text(size = 16, face = "bold"),
+        axis.title.x = element_text(size= 18, face = "bold"),
+        axis.title.y = element_text(size=18, face = "bold"), 
+        legend.title = element_text(size = 18), 
+        legend.text = element_text(size = 16))+
+  labs(y = "Species Strength", shape = "Bumble bees")+
+  scale_shape_discrete(labels = c(expression(italic("Bombus californicus")),
+                                  expression(italic("Bombus flavifrons")),
+                                  expression(italic("Bombus melanopygus")),
+                                  expression(italic("Bombus mixtus")),
+                                  expression(italic("Bombus vancouverensis")),
+                                  expression(italic("Bombus vosnesenskii"))))
+#geom_line()+
+#geom_smooth(aes(group = Complex), method = "glm", se = FALSE, color = "black")
+
+ggsave("C:/Users/Owner/Documents/UO Master's/Classes/Data Science Eco Conserv/Final Project/graphs_p_values/Species Strength.jpg", plot = last_plot(), width = 12, height = 8,dpi = 300)
 
 
-bumblebee_adj <- makeNets(HJA_bumblebees, "YearSR")  
-graph_bumbles <- graph_from_biadjacency_matrix(bumblebee_adj, weighted = TRUE)
+# unique(plant_poll_adj$Year) #the years are 2011-2018; 2021-2024 - 2024 is not a full sample year
+# #I should probably shuffle the network to create a null network to compare my network against
+#down below I am only looking at the carpenter complex- testing to see if this can be
+#done, considering for only a few complexes were values significant. 
+closness_carpenter <-ggplot(data= bumblebees_adj %>% 
+         filter(Complex == "Carpenter"),
+       aes( x = Year, y = closeness, color = Site, shape = GenusSpecies))+
+  geom_jitter()+
+  geom_smooth(aes(group = Complex), method = "lm", formula = y ~ x, color = "black") +
+  stat_cor(
+    inherit.aes = FALSE,                         
+    aes(x = Year, y = closeness, label = ..p.label..),
+    label.x.npc = "left", 
+    size =8)+
+  scale_x_continuous(breaks=seq(2011, 2024, by=2))+
+  #facet_wrap(~ Complex)+
+  theme_minimal()+
+  theme(strip.text = element_text(size = 16, face = "bold"),
+        axis.title.x = element_text(size= 18, face = "bold"),
+        axis.title.y = element_text(size=18, face = "bold"), 
+        legend.title = element_text(size = 18), 
+        legend.text = element_text(size = 16))+
+  labs(y = "Closeness", shape = "Bumble bees")+
+  scale_shape_discrete(labels = c(expression(italic("Bombus californicus")),
+                                  expression(italic("Bombus flavifrons")),
+                                  expression(italic("Bombus melanopygus")),
+                                  expression(italic("Bombus mixtus")),
+                                  expression(italic("Bombus vancouverensis")),
+                                  expression(italic("Bombus vosnesenskii"))))
+
+#effective partners
+effective_partners_frissell <-ggplot(data= bumblebees_adj %>% 
+                              filter(Complex == "Frissell"),
+                            aes( x = Year, y = effective.partners, color = Site, shape = GenusSpecies))+
+  geom_jitter()+
+  geom_smooth(aes(group = Complex), method = "lm", formula = y ~ x, color = "black") +
+  stat_cor(
+    inherit.aes = FALSE,                         
+    aes(x = Year, y = effective.partners, label = ..p.label..),
+    label.x.npc = "left", 
+    size =8)+
+  scale_x_continuous(breaks=seq(2011, 2024, by=2))+
+  #facet_wrap(~ Complex)+
+  theme_minimal()+
+  theme(strip.text = element_text(size = 16, face = "bold"),
+        axis.title.x = element_text(size= 18, face = "bold"),
+        axis.title.y = element_text(size=18, face = "bold"), 
+        legend.title = element_text(size = 18), 
+        legend.text = element_text(size = 16))+
+  labs(y = "Effective Partners", shape = "Bumble bees")+
+  scale_shape_discrete(labels = c(expression(italic("Bombus californicus")),
+                                  expression(italic("Bombus flavifrons")),
+                                  expression(italic("Bombus melanopygus")),
+                                  expression(italic("Bombus mixtus")),
+                                  expression(italic("Bombus vancouverensis")),
+                                  expression(italic("Bombus vosnesenskii"))))
+
+#PDI
+PDI_carpenter <-ggplot(data= bumblebees_adj %>% 
+                              filter(Complex == "Carpenter"),
+                            aes( x = Year, y = PDI, color = Site, shape = GenusSpecies))+
+  geom_jitter()+
+  geom_smooth(aes(group = Complex), method = "lm", formula = y ~ x, color = "black") +
+  stat_cor(
+    inherit.aes = FALSE,                         
+    aes(x = Year, y = PDI, label = ..p.label..),
+    label.x.npc = "left", 
+    label.y.npc = "bottom", 
+    size =8)+
+  scale_x_continuous(breaks=seq(2011, 2024, by=2))+
+  #facet_wrap(~ Complex)+
+  theme_minimal()+
+  theme(strip.text = element_text(size = 16, face = "bold"),
+        axis.title.x = element_text(size= 18, face = "bold"),
+        axis.title.y = element_text(size=18, face = "bold"), 
+        legend.title = element_text(size = 18), 
+        legend.text = element_text(size = 16))+
+  labs(y = "PDI", shape = "Bumble bees")+
+  scale_shape_discrete(labels = c(expression(italic("Bombus californicus")),
+                                  expression(italic("Bombus flavifrons")),
+                                  expression(italic("Bombus melanopygus")),
+                                  expression(italic("Bombus mixtus")),
+                                  expression(italic("Bombus vancouverensis")),
+                                  expression(italic("Bombus vosnesenskii"))))
+(closness_carpenter|effective_partners_frissell|PDI_carpenter)
+ggsave("C:/Users/Owner/Documents/UO Master's/Classes/Data Science Eco Conserv/Final Project/explore_patchwork.jpg", plot = last_plot(), width = 12, height = 8,dpi = 300)
 
 
+#combined <- (closness_carpenter | effective_partners_frissell | PDI_carpenter) +
+ # plot_layout(
+  #  ncol = 3,              # explicitly 3 columns
+   # widths = c(1, 1, 1),   # adjust if one plot needs more space (e.g., c(1.2, 1, 1))
+#    guides = "collect",    # collect legends to a single shared legend
+ # ) +
+#  plot_annotation(
+#    title = "HJ Andrew's Complexes",
+#    theme = theme(plot.title = element_text(size = 16, face = "bold"))
+#  ) &
+#  theme(legend.position = "bottom")  # shared legend position
+#ggsave("C:/Users/Owner/Documents/UO Master's/Classes/Data Science Eco Conserv/Final Project/explore_patchwork.jpg", plot = last_plot(), width = 12, height = 8,dpi = 300)
 
