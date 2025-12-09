@@ -8,13 +8,16 @@ source("C:\\Users\\Owner\\University of Oregon Dropbox\\Megan Fenner\\cascades-m
 install.packages("ggpubr")
 install.packages("patchwork")
 install.packages("ggforce")
+install.packages("lmerTest")
 library(dplyr)
 library(tidyr)
 library(ggpubr)
 library(patchwork)
 library(ggforce)
+library(lme4)
+library(lmerTest)
 
-
+#I decided to test for: PDI, PSI, Species Strength, Closeness, and Effective Partners
 
 which(is.na(sp.lev), arr.ind = TRUE) #gives the specific instances of 
 # #where NA values are
@@ -106,273 +109,152 @@ bumblebees_adj <- bumblebees_adj %>%
 #Effective Partners
 ggplot(data= bumblebees_adj, aes( x = Year, y = effective.partners, color = Site, shape = GenusSpecies))+
   geom_jitter()+
-  geom_smooth(aes(group = Complex), method = "lm", formula = y ~ x, color = "black") +
-  stat_cor(
-    inherit.aes = FALSE,                         
-    aes(x = Year, y = effective.partners, label = ..p.label..),
-    label.x.npc = "left",
-    size = 8)+
+  geom_smooth(aes(group = Complex, linetype = Complex), method = "lm", formula = y ~ x, color = "black") + #psuedoreplicating data
+  scale_linetype_manual(values = c("Carpenter" = "solid", "Frissell" = "solid", "Lookout" = "solid"))+
   scale_x_continuous(breaks=seq(2011, 2024, by=2))+
   facet_wrap(~ Complex)+
   theme_minimal()+
-  theme(strip.text = element_text(size = 16, face = "bold"),
-        axis.title.x = element_text(size= 18, face = "bold"),
-        axis.title.y = element_text(size=18, face = "bold"), 
-        legend.title = element_text(size = 18), 
-        legend.text = element_text(size = 16))+
+  theme(strip.text = element_text(size = 20, face = "bold"),
+        axis.title.x = element_text(size= 20, face = "bold"),
+        axis.title.y = element_text(size=20, face = "bold"), 
+        legend.title = element_text(size = 24), 
+        legend.text = element_text(size = 20),
+        axis.text.x = element_text( size = 10),
+        axis.text.y = element_text(size = 14))+
   labs(y = "Effective Partners", shape = "Bumble bees")+
   scale_shape_discrete(labels = c(expression(italic("Bombus californicus")),
                                   expression(italic("Bombus flavifrons")),
                                   expression(italic("Bombus melanopygus")),
                                   expression(italic("Bombus mixtus")),
                                   expression(italic("Bombus vancouverensis")),
-                                  expression(italic("Bombus vosnesenskii"))))
+                                  expression(italic("Bombus vosnesenskii")))) +
+  guides(linetype = "none") #removes the line legend
+effective_partners_model <- lmer(effective.partners ~ scale(Year)*Complex + (1|GenusSpecies) + (1|Site), data = bumblebees_adj)
+summary(effective_partners_model)
+ggsave("C:/Users/Owner/Documents/UO Master's/Classes/Data Science Eco Conserv/Final Project/graphs_p_values/Effective Partners_noP.jpg", plot = last_plot(), width = 12, height = 8,dpi = 300)
 
+bumblebees_adj %>%
+  filter(Complex == "Frissell") %>%
+  summarize(unique(GenusSpecies))
 
-ggplot(data= bumblebees_adj, aes( x = Year, y = effective.partners, color = Site, shape = GenusSpecies))+
-  geom_jitter()+
-  geom_smooth(aes(group = Complex), method = "lm", formula = y ~ x, color = "black") +
-  stat_cor(
-    inherit.aes = FALSE,                         
-    aes(x = Year, y = effective.partners, label = ..p.label..),
-    label.x.npc = "left",
-    size = 8)+
-  scale_x_continuous(breaks=seq(2011, 2024, by=2))+
-  facet_wrap_paginate(~ Complex, ncol = 1, nrow = 1, page = 2) +
-  theme_minimal()+
-  theme(strip.text = element_text(size = 16, face = "bold"),
-        axis.title.x = element_text(size= 18, face = "bold"),
-        axis.title.y = element_text(size=18, face = "bold"), 
-        legend.title = element_text(size = 18), 
-        legend.text = element_text(size = 16))+
-  labs(y = "Effective Partners", shape = "Bumble bees")+
-  scale_shape_discrete(labels = c(expression(italic("Bombus californicus")),
-                                  expression(italic("Bombus flavifrons")),
-                                  expression(italic("Bombus melanopygus")),
-                                  expression(italic("Bombus mixtus")),
-                                  expression(italic("Bombus vancouverensis")),
-                                  expression(italic("Bombus vosnesenskii"))))
-
-
-
-
-
-
-ggsave("C:/Users/Owner/Documents/UO Master's/Classes/Data Science Eco Conserv/Final Project/graphs_p_values/Effective Partners_Frissell.jpg", plot = last_plot(), width = 12, height = 8,dpi = 300)
 
 #PSI
   
 ggplot(data= bumblebees_adj, aes( x = Year, y = PSI, color = Site, shape = GenusSpecies))+
   geom_jitter()+
-  geom_smooth(aes(group = Complex), method = "lm", formula = y ~ x, color = "black") +
-  stat_cor(
-    inherit.aes = FALSE,                         
-    aes(x = Year, y = PSI, label = ..p.label..),
-    label.x.npc = "left", 
-    size = 8)+
+  geom_smooth(aes(group = Complex, linetype = Complex), method = "lm", formula = y ~ x, color = "black") +
+  scale_linetype_manual(values = c("Carpenter" = "dashed", "Frissell" = "dashed", "Lookout" = "dashed"))+
   scale_x_continuous(breaks=seq(2011, 2024, by=2))+
   facet_wrap(~ Complex)+
   theme_minimal()+
-  theme(strip.text = element_text(size = 16, face = "bold"),
-        axis.title.x = element_text(size= 18, face = "bold"),
-        axis.title.y = element_text(size=18, face = "bold"), 
-        legend.title = element_text(size = 18), 
-        legend.text = element_text(size = 16))+
+  theme(strip.text = element_text(size = 20, face = "bold"),
+        axis.title.x = element_text(size= 20, face = "bold"),
+        axis.title.y = element_text(size=20, face = "bold"), 
+        legend.title = element_text(size = 24), 
+        legend.text = element_text(size = 20),
+        axis.text.x = element_text( size = 10),
+        axis.text.y = element_text(size = 14))+
   labs(y = "PSI", shape = "Bumble bees")+
   scale_shape_discrete(labels = c(expression(italic("Bombus californicus")),
                                   expression(italic("Bombus flavifrons")),
                                   expression(italic("Bombus melanopygus")),
                                   expression(italic("Bombus mixtus")),
                                   expression(italic("Bombus vancouverensis")),
-                                  expression(italic("Bombus vosnesenskii"))))
+                                  expression(italic("Bombus vosnesenskii"))))+
+  guides(linetype = "none")
+PSI_model <-lmer(PSI ~ scale(Year)*Complex + (1|GenusSpecies) + (1|Site), data = bumblebees_adj)
+summary(PSI_model)
 
-ggsave("C:/Users/Owner/Documents/UO Master's/Classes/Data Science Eco Conserv/Final Project/graphs_p_values/PSI.jpg", plot = last_plot(), width = 12, height = 8,dpi = 300)
+ggsave("C:/Users/Owner/Documents/UO Master's/Classes/Data Science Eco Conserv/Final Project/graphs_p_values/PSI_noP.jpg", plot = last_plot(), width = 12, height = 8,dpi = 300)
 
 #PDI
   
 ggplot(data= bumblebees_adj, aes( x = Year, y = PDI, color = Site, shape = GenusSpecies))+
   geom_jitter()+
-  geom_smooth(aes(group = Complex), method = "lm", formula = y ~ x, color = "black") +
-  stat_cor(
-    inherit.aes = FALSE,                         
-    aes(x = Year, y = PDI, label = ..p.label..),
-    label.x.npc = "left", 
-    label.y.npc = "bottom", 
-    size = 8)+
+  geom_smooth(aes(group = Complex, linetype = Complex), 
+                  method = "lm", formula = y ~ x, color = "black") +
+  scale_linetype_manual(values = c("Carpenter" = "solid", "Frissell" = "solid", "Lookout" = "solid"))+
   scale_x_continuous(breaks=seq(2011, 2024, by=2))+
-  facet_wrap_paginate(~ Complex, ncol = 1, nrow = 1, page = 1) +
+  facet_wrap(~ Complex)+ 
   theme_minimal()+
-  theme(strip.text = element_text(size = 16, face = "bold"),
-        axis.title.x = element_text(size= 18, face = "bold"),
-        axis.title.y = element_text(size=18, face = "bold"), 
-        legend.title = element_text(size = 18), 
-        legend.text = element_text(size = 16))+
+ theme(strip.text = element_text(size = 20, face = "bold"),
+        axis.title.x = element_text(size= 20, face = "bold"),
+        axis.title.y = element_text(size=20, face = "bold"), 
+        legend.title = element_text(size = 24), 
+        legend.text = element_text(size = 20),
+        axis.text.x = element_text( size = 10),
+        axis.text.y = element_text(size = 14))+
   labs(y = "PDI", shape = "Bumble bees")+
   scale_shape_discrete(labels = c(expression(italic("Bombus californicus")),
                                   expression(italic("Bombus flavifrons")),
                                   expression(italic("Bombus melanopygus")),
                                   expression(italic("Bombus mixtus")),
                                   expression(italic("Bombus vancouverensis")),
-                                  expression(italic("Bombus vosnesenskii"))))
+                                  expression(italic("Bombus vosnesenskii"))))+
+  guides(linetype = "none") #removes the line legend
 
-ggsave("C:/Users/Owner/Documents/UO Master's/Classes/Data Science Eco Conserv/Final Project/graphs_p_values/PDI_Carpenter.jpg", plot = last_plot(), width = 12, height = 8,dpi = 300)
+PDI_model <-lmer(PDI ~ scale(Year)*Complex + (1|GenusSpecies) + (1|Site), data = bumblebees_adj)
+summary(PDI_model)
+ggsave("C:/Users/Owner/Documents/UO Master's/Classes/Data Science Eco Conserv/Final Project/graphs_p_values/PDI_noP.jpg", plot = last_plot(), width = 12, height = 8,dpi = 300)
 
 #Closeness
   
 ggplot(data= bumblebees_adj, aes( x = Year, y = closeness, color = Site, shape = GenusSpecies))+
   geom_jitter()+
-  geom_smooth(aes(group = Complex), method = "lm", formula = y ~ x, color = "black") +
-    stat_cor(
-    inherit.aes = FALSE,                         
-    aes(x = Year, y = closeness, label = ..p.label..),
-    label.x.npc = "left",
-    size = 8)+
+  geom_smooth(aes(group = Complex, linetype = Complex), method = "lm", formula = y ~ x, color = "black") +
+  scale_linetype_manual(values = c("Carpenter" = "solid", "Frissell" = "solid", "Lookout" = "solid"))+
   scale_x_continuous(breaks=seq(2011, 2024, by=2))+
-  facet_wrap_paginate(~ Complex, ncol = 1, nrow = 1, page = 1) +
+  facet_wrap(~ Complex)+
   theme_minimal()+
-  theme(strip.text = element_text(size = 16, face = "bold"),
-        axis.title.x = element_text(size= 18, face = "bold"),
-        axis.title.y = element_text(size=18, face = "bold"), 
-        legend.title = element_text(size = 18), 
-        legend.text = element_text(size = 16))+
+  theme(strip.text = element_text(size = 20, face = "bold"),
+        axis.title.x = element_text(size= 20, face = "bold"),
+        axis.title.y = element_text(size=20, face = "bold"), 
+        legend.title = element_text(size = 24), 
+        legend.text = element_text(size = 20),
+        axis.text.x = element_text( size = 10),
+        axis.text.y = element_text(size = 14))+
   labs(y = "Closeness", shape = "Bumble bees")+
   scale_shape_discrete(labels = c(expression(italic("Bombus californicus")),
                                      expression(italic("Bombus flavifrons")),
                                      expression(italic("Bombus melanopygus")),
                                      expression(italic("Bombus mixtus")),
                                      expression(italic("Bombus vancouverensis")),
-                                     expression(italic("Bombus vosnesenskii"))))
+                                     expression(italic("Bombus vosnesenskii"))))+
+  guides(linetype = "none") #removes the line legend
+Closeness_model <-lmer(closeness ~ scale(Year)*Complex + (1|GenusSpecies) + (1|Site), data = bumblebees_adj)
+summary(Closeness_model)
+
+
 #only Carpenter is significant
-ggsave("C:/Users/Owner/Documents/UO Master's/Classes/Data Science Eco Conserv/Final Project/graphs_p_values/Closeness_Carpenter.jpg", plot = last_plot(), width = 12, height = 8,dpi = 300)
+ggsave("C:/Users/Owner/Documents/UO Master's/Classes/Data Science Eco Conserv/Final Project/graphs_p_values/Closeness_noP.jpg", plot = last_plot(), width = 12, height = 8,dpi = 300)
 
 #Species Strength
 ggplot(data= bumblebees_adj, aes( x = Year, y = species.strength, color = Site, shape = GenusSpecies))+
   geom_jitter()+
-  geom_smooth(aes(group = Complex), method = "lm", formula = y ~ x, color = "black") +
-  stat_cor(
-    inherit.aes = FALSE,                         
-    aes(x = Year, y = species.strength, label = ..p.label..),
-    label.x.npc = "left", 
-    size =8)+
+  geom_smooth(aes(group = Complex, linetype = Complex), method = "lm", formula = y ~ x, color = "black") +
+  scale_linetype_manual(values = c("Carpenter" = "solid", "Frissell" = "solid", "Lookout" = "solid"))+
   scale_x_continuous(breaks=seq(2011, 2024, by=2))+
   facet_wrap(~ Complex)+
   theme_minimal()+
-  theme(strip.text = element_text(size = 16, face = "bold"),
-        axis.title.x = element_text(size= 18, face = "bold"),
-        axis.title.y = element_text(size=18, face = "bold"), 
-        legend.title = element_text(size = 18), 
-        legend.text = element_text(size = 16))+
+  theme(strip.text = element_text(size = 20, face = "bold"),
+        axis.title.x = element_text(size= 20, face = "bold"),
+        axis.title.y = element_text(size=20, face = "bold"), 
+        legend.title = element_text(size = 24), 
+        legend.text = element_text(size = 20),
+        axis.text.x = element_text( size = 10),
+        axis.text.y = element_text(size = 14))+
   labs(y = "Species Strength", shape = "Bumble bees")+
   scale_shape_discrete(labels = c(expression(italic("Bombus californicus")),
                                   expression(italic("Bombus flavifrons")),
                                   expression(italic("Bombus melanopygus")),
                                   expression(italic("Bombus mixtus")),
                                   expression(italic("Bombus vancouverensis")),
-                                  expression(italic("Bombus vosnesenskii"))))
-#geom_line()+
-#geom_smooth(aes(group = Complex), method = "glm", se = FALSE, color = "black")
-
-ggsave("C:/Users/Owner/Documents/UO Master's/Classes/Data Science Eco Conserv/Final Project/graphs_p_values/Species Strength.jpg", plot = last_plot(), width = 12, height = 8,dpi = 300)
-
-
-# unique(plant_poll_adj$Year) #the years are 2011-2018; 2021-2024 - 2024 is not a full sample year
-# #I should probably shuffle the network to create a null network to compare my network against
-#down below I am only looking at the carpenter complex- testing to see if this can be
-#done, considering for only a few complexes were values significant. 
-closness_carpenter <-ggplot(data= bumblebees_adj %>% 
-         filter(Complex == "Carpenter"),
-       aes( x = Year, y = closeness, color = Site, shape = GenusSpecies))+
-  geom_jitter()+
-  geom_smooth(aes(group = Complex), method = "lm", formula = y ~ x, color = "black") +
-  stat_cor(
-    inherit.aes = FALSE,                         
-    aes(x = Year, y = closeness, label = ..p.label..),
-    label.x.npc = "left", 
-    size =8)+
-  scale_x_continuous(breaks=seq(2011, 2024, by=2))+
-  #facet_wrap(~ Complex)+
-  theme_minimal()+
-  theme(strip.text = element_text(size = 16, face = "bold"),
-        axis.title.x = element_text(size= 18, face = "bold"),
-        axis.title.y = element_text(size=18, face = "bold"), 
-        legend.title = element_text(size = 18), 
-        legend.text = element_text(size = 16))+
-  labs(y = "Closeness", shape = "Bumble bees")+
-  scale_shape_discrete(labels = c(expression(italic("Bombus californicus")),
-                                  expression(italic("Bombus flavifrons")),
-                                  expression(italic("Bombus melanopygus")),
-                                  expression(italic("Bombus mixtus")),
-                                  expression(italic("Bombus vancouverensis")),
-                                  expression(italic("Bombus vosnesenskii"))))
-
-#effective partners
-effective_partners_frissell <-ggplot(data= bumblebees_adj %>% 
-                              filter(Complex == "Frissell"),
-                            aes( x = Year, y = effective.partners, color = Site, shape = GenusSpecies))+
-  geom_jitter()+
-  geom_smooth(aes(group = Complex), method = "lm", formula = y ~ x, color = "black") +
-  stat_cor(
-    inherit.aes = FALSE,                         
-    aes(x = Year, y = effective.partners, label = ..p.label..),
-    label.x.npc = "left", 
-    size =8)+
-  scale_x_continuous(breaks=seq(2011, 2024, by=2))+
-  #facet_wrap(~ Complex)+
-  theme_minimal()+
-  theme(strip.text = element_text(size = 16, face = "bold"),
-        axis.title.x = element_text(size= 18, face = "bold"),
-        axis.title.y = element_text(size=18, face = "bold"), 
-        legend.title = element_text(size = 18), 
-        legend.text = element_text(size = 16))+
-  labs(y = "Effective Partners", shape = "Bumble bees")+
-  scale_shape_discrete(labels = c(expression(italic("Bombus californicus")),
-                                  expression(italic("Bombus flavifrons")),
-                                  expression(italic("Bombus melanopygus")),
-                                  expression(italic("Bombus mixtus")),
-                                  expression(italic("Bombus vancouverensis")),
-                                  expression(italic("Bombus vosnesenskii"))))
-
-#PDI
-PDI_carpenter <-ggplot(data= bumblebees_adj %>% 
-                              filter(Complex == "Carpenter"),
-                            aes( x = Year, y = PDI, color = Site, shape = GenusSpecies))+
-  geom_jitter()+
-  geom_smooth(aes(group = Complex), method = "lm", formula = y ~ x, color = "black") +
-  stat_cor(
-    inherit.aes = FALSE,                         
-    aes(x = Year, y = PDI, label = ..p.label..),
-    label.x.npc = "left", 
-    label.y.npc = "bottom", 
-    size =8)+
-  scale_x_continuous(breaks=seq(2011, 2024, by=2))+
-  #facet_wrap(~ Complex)+
-  theme_minimal()+
-  theme(strip.text = element_text(size = 16, face = "bold"),
-        axis.title.x = element_text(size= 18, face = "bold"),
-        axis.title.y = element_text(size=18, face = "bold"), 
-        legend.title = element_text(size = 18), 
-        legend.text = element_text(size = 16))+
-  labs(y = "PDI", shape = "Bumble bees")+
-  scale_shape_discrete(labels = c(expression(italic("Bombus californicus")),
-                                  expression(italic("Bombus flavifrons")),
-                                  expression(italic("Bombus melanopygus")),
-                                  expression(italic("Bombus mixtus")),
-                                  expression(italic("Bombus vancouverensis")),
-                                  expression(italic("Bombus vosnesenskii"))))
-(closness_carpenter|effective_partners_frissell|PDI_carpenter)
-ggsave("C:/Users/Owner/Documents/UO Master's/Classes/Data Science Eco Conserv/Final Project/explore_patchwork.jpg", plot = last_plot(), width = 12, height = 8,dpi = 300)
-
-
-#combined <- (closness_carpenter | effective_partners_frissell | PDI_carpenter) +
- # plot_layout(
-  #  ncol = 3,              # explicitly 3 columns
-   # widths = c(1, 1, 1),   # adjust if one plot needs more space (e.g., c(1.2, 1, 1))
-#    guides = "collect",    # collect legends to a single shared legend
- # ) +
-#  plot_annotation(
-#    title = "HJ Andrew's Complexes",
-#    theme = theme(plot.title = element_text(size = 16, face = "bold"))
-#  ) &
-#  theme(legend.position = "bottom")  # shared legend position
-#ggsave("C:/Users/Owner/Documents/UO Master's/Classes/Data Science Eco Conserv/Final Project/explore_patchwork.jpg", plot = last_plot(), width = 12, height = 8,dpi = 300)
+                                  expression(italic("Bombus vosnesenskii"))))+
+  guides(linetype = "none")
+Species_strength_model <-lmer(species.strength ~ scale(Year)*Complex + (1|GenusSpecies) + (1|Site), data = bumblebees_adj)
+summary(Species_strength_model) #slope of the year varies by the complex (Year*Complex)
+#treatment complex model- the intercept is Carpenter by default, the changes are the changes
+#of each site of it compared to the value outputted. The intercept is the average value of each
+#condition
+ggsave("C:/Users/Owner/Documents/UO Master's/Classes/Data Science Eco Conserv/Final Project/graphs_p_values/Species_Strength_noP.jpg", plot = last_plot(), width = 12, height = 8,dpi = 300)
 
