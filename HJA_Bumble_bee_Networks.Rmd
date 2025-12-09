@@ -1,14 +1,40 @@
 ---
-title: "HJA_Bumble_bee_Networks_markdown"
+title: "HJA Bumble Bees--Exploring Network Changes Through Time"
 output: html_document
 date: "2025-11-25"
+author: "Megan Fenner"
+bibliography: "Bumble bee Network.bib"
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+#knitr::opts_chunk$set(echo = TRUE)
+
+knitr::opts_chunk$set(
+  fig.width = 8,        
+  fig.height = 5,      
+  fig.retina = 2,       
+  out.width = "100%",   
+  fig.align = "center" 
+)
+
 ```
 
 ```{r}
+options(repos = c(CRAN = "https://cloud.r-project.org"))
+install.packages("ggpubr")
+install.packages("patchwork")
+install.packages("ggforce")
+install.packages("lme4")
+```
+
+```{r}
+library(dplyr)
+library(tidyr)
+library(ggpubr)
+library(patchwork)
+library(ggforce)
+library(lme4)
+
 setwd("C:/Users/Owner/Documents/UO Master's/Classes/Data Science Eco Conserv/Final Project/HJA-Bumble_bee_Networks--MF-")
 load("C:\\Users\\Owner\\University of Oregon Dropbox\\Megan Fenner\\cascades-meadows\\data\\spec_net.Rdata")
 load("C:/Users/Owner/Downloads/Year_PlantPollinator_Bumblebees.Rdata")
@@ -16,22 +42,33 @@ load("C:/Users/Owner/Downloads/Year_PlantPollinator_Bumblebees (1).Rdata")
 source("C:\\Users\\Owner\\University of Oregon Dropbox\\Megan Fenner\\cascades-meadows\\dataPrep\\src\\prepNets.R")
 source("C:\\Users\\Owner\\University of Oregon Dropbox\\Megan Fenner\\cascades-meadows\\dataPrep\\src\\misc.R")
 source("C:\\Users\\Owner\\University of Oregon Dropbox\\Megan Fenner\\cascades-meadows\\dataPrep\\src\\specialization.R")
-install.packages("ggpubr")
-install.packages("patchwork")
-install.packages("ggforce")
-library(dplyr)
-library(tidyr)
-library(ggpubr)
-library(patchwork)
-library(ggforce)
-
 ```
 
+# *Introduction*
+
+Bumble bees are important pollinators in montane ecosystems, pollinating a wide variety of flower species in high elevation meadows [@devoto_ecological_2014]. These services that they provide are vital for the maintenance of the health of this ecosystem, as well as further downstream effects on agricultural productivity, making their services vital [@ulyshen_forests_critical_2023]. Bumble bees display central place foraging; workers gather resources on foraging bouts and bring pollen and nectar back to the colony after every foraging cycle, supporting colony health throughout the season [@kembro_bumblebees_2019]. Bumble bees therefore are limited in their dispersal capacity as individuals are expected to return to their nests after each foraging bout; resources are not gathered for the individual but for the colony [@kembro_bumblebees_2019]. The bumble bee life cycle is anual; queens emerge in the early spring, she produces workers and gathers up resources to feed larva, and once workers enclose, foraging shifts to workers who then gather resources for her siblings and future reproducitves who are produced at the end of the growing season around the time when the colony begins to die off [@foraging_across_lifestages_Mola_2025]. Bumble bees historically begin foraging during peak floral abundance. The life cycle of annual flowers and bumble bees are therefore highly linked, and species persistence is dependent upon this interation [@martin_diversified_2025].  
+
+In high elevation ecosystems various climatic conditions act as drivers for flower and bumble bee phenology[@ogilvie_interannual_2017]. Past research has shown that the strongest drivers are precipitation, seasonal snow melt timing, and temperature [@ogilvie_interannual_2017],[@millerstruttmann_climate_2022], with various positive and negative effects. For example, while precipitation may lead to sooner bloom periods, too much precipitation might negatively effect bumble bees by damaging nests[@millerstruttmann_climate_2022]. In years past, timing to first flower bloom and queen emergence have been synchronized in ways such that bumble bee colony abundance corresponds to peak floral resource availability; however, climate change is a suspected driver of current observed phenological mismatch between bumble bees and flowers, which may have the power to reshape plant-pollinator networks [@millerstruttmann_climate_2022]. Climate change is a suspected driver of phenological mismatch because variation in climate conditions heavily impacts various attributes of flower species, which can have downstream effects on pollinators. While average temperatures in May in high elevation environments act a cue for both flower blooms and bee emergence and foraging initiation, when May temperatures are warmer, flowers begin blooming earlier [@millerstruttmann_climate_2022]. Greater summer precipitation and later snow melt days lengthen floral days, which increases bumble bee abundance, and summer precipitation advances worker emergence [@ogilvie_interannual_2017],[@millerstruttmann_climate_2022]. However, though floral season has lengthened, it has also been observed that floral days decrease, negatively impacting bumble bee abundance, suggesting that while lengthened floral periods may increase bee abundance, reduced  floral bloom days has negative impacts on bumble bee health [@ogilvie_interannual_2017]. Overall, it has been observed that warmer May temperatures lead to greater phenological mismatch between flowers and pollinators, which has potential negative effects on bumble bee health as resources depleted earlier in the season reduce the length of the foraging period for bumble bees[@millerstruttmann_climate_2022]. It is therefore important to investigate diet breadth plasticity throughout time in bumble bee species. 
+
+Bumble bee foraging may be limited by physiological constraints, potentially influencing the ability of bumble bees to forage on particular flower species[@martin_diversified_2025]. Specifically, length of bumble bee tongues have been a suspected driver of niche partitioning, as longer tongued bees can forage better from flowers with deeper corolla lengths, leading to potential foraging specialization (reviewed by [@martin_diversified_2025]). However, recent studies have suggested that variation in tongue length in alpine bumble bees is becoming homogenized because of climate change acting as a selective pressure (reviewed by [@martin_diversified_2025]), and yet tongue homogenization is not a predicted driver of niche partitioning as variation in tongue length does not predict modules in plant-pollinator networks in alpine bumble bees [@martin_diversified_2025]. Therefore, we expect other drivers, such as other behavioral traits, to influence foraging of bumble bees under the pressure of climate change [@martin_diversified_2025]. Bumble bees are highly adaptive foragers that shift between habitual and stochastic foraging trends, allowing them to both exploit resources and explore for novel resource acquisition [@kembro_bumblebees_2019]. In environments that are experiencing phenological mismatch, this ability to switch resources might allow for individual persistence in changing conditions [@ponisio2017opportunistic]. 
+	
+Here, I investigate network metrics that I predict are proxy estimators of network changes induced by climate change. The question that I ask is **Under the assumption of phenological mismatch induced by climate change, how has bumble bee foraging changed throughout time?** I hypothesize that bumble bee foraging has changed throughout time, which can be observed in selected network metrics which aim to investigate changes in foraging patterns and act as indicators of network health, showing that plant-pollinator network health is negatively imapcted by network changes induced under the assumption of climate change with phenological mismatch acting as a driver. While this study does not specifically investigate seasonal climate changes, or investigates phenological mismatch specifically, it does take the network perspective and attempts to make broader claims through investigating changes through time. These results will act as a springboard for future analyses. 
+
+Data analyzed in this project are data collected from H. J. Andrews Experimental Forest in the Willamette National Forest, OR. The data are part of a LTER initiative aiming to collect extensive data on plant-pollinator dynamics in high elevation meadows throughout time. The data set includes data from 2011 to 2025, with missing pollinator data in the year 2025, and a reduced data set from the year 2024 due to a shortened field season because of fire evacuation. This data set is extensive and includes a high enough resolution to be able to conduct rigorous network analyses on. These data are used for the rest of this project. From this analysis, I will generate a better understanding building knowledge surrounding changes in networks throughout time.  
+
+# *Method*
+
+To generate the adjacency matrix, functions from the Cascades Meadows dropbox file were loaded into the script. The specNet, specialization, and misc script contains code for the functions used to generate the adjacency matrix. Data come from 1_specimenPrep, which also includes script that compiles these sourced functions with the HJA data and creates an adjacency matrix- called sp.lev, which is further cleaned.  
+
+The makeNets function was used to create an adjacency matrix. The makeNets function also uses function breakNets and calcSpec. The makeNets function has three arguments that it takes: the species data, which in this case was grouped to include species from the genus "Bombus", the net type, which tells the function to create networks by either year or year and sampling round, as well as a character string called "pol.groups" which creates an output name iforming us what the network was created for. In this case, the species chosen was "Bombus", the net.type "Year", and the poll.groups "Bumblebees". The makeNets function uses the function breakNets specifies that the network should be broken into site and year for the data that it is given. It also specifies which data are considered higher level and lower level, setting the lower level to "PlantGenusSpecies" and higher level to the specimen data, which in this case is the HJA data from 1_specimenPrep. This function is incorporated into the makeNets function; the output of the function breakNets is then used in an lapply function, which applies a bipartite network analysis to the data, generating the adjacecny matrix which is used here for further analysis. sp.lev is created by using the function calcSpec which runs the data "nets" generated from the breakNets function through it. The calcSpec function creates the matrix of network metrics calculated for the species chosen and the year grouping chosen, using the function "specieslevel", which calculates a variety of informative metrics which are then analyzed further below. It applies specieslevel from bipartite to networks, which helps generate the adjacency matrix used. The combination of these functions accumulates to creating an adjacency matrix which includes only bumble bee species and their interacting partners, along with informative network metrics embedded into the function "specieslevel". Down below,this adjacency matrix is further cleaned.  
+
 ```{r}
-which(is.na(sp.lev), arr.ind = TRUE) #gives the specific instances of 
-# #where NA values are
+#Identify where there are NAs
+which(is.na(sp.lev), arr.ind = TRUE) 
+head(which(is.na(sp.lev), arr.ind = TRUE)) #to reduce output in R markdown
+#gives the specific instances of where NA values are
 names(sp.lev)[colSums(is.na(sp.lev)) > 0] #gives the column names of where NA is, by
-# #summing the columns where NA appears, such that if NA is there, it is assigned a value of 1, and 
+# #summing the columns where NA appears, such that if NA is there, it is assigned a value of 1, and
 # #therefore, is then greater than 0.
  
 plant_poll_adj <- sp.lev %>% #this row replaces all the NAs in each column with 0s
@@ -43,31 +80,29 @@ plant_poll_adj <- sp.lev %>% #this row replaces all the NAs in each column with 
 ```
 
 ```{r}
-#to check for the unique sites- as in following years, 12 sites got reduced to 10
+#to check for the unique sites
 unique(plant_poll_adj$Site)
 
-#only focus on the GenusSpecies data with "Bombus" as the genus
+#only focus on the GenusSpecies data with "Bombus" as the genus, cleaning of plant names
 bumblebee_adj <- plant_poll_adj %>%
-  #using grepl is a function that acts like a regular expression, looking for instances
-  #where there are specific strings of text- in this case, all instances of Bombus +
-  #the species name-- this regular expression also removes instances of just "Bombus"
+  #using grepl, is a function that acts like a regular expression, looking for instances where there are specific strings of text- in this case, all instances of Bombus + the species name-- this regular expression also removes instances of just "Bombus"
   filter(grepl("^Bombus\\s+\\w+", GenusSpecies))
 
 #checking to see if there are only Bombus in the code
 unique(bumblebee_adj$GenusSpecies)
-
+#seeing which years are in the data frame to check for missing years
 unique(bumblebee_adj$Year)
 ```
+There are a total of 16 bumble bee species that have been caught at HJA between the years 2011 and 2022. Data were not collected in the years 2019 & 2020. 
 
 ```{r}
-#the count of some of the bumble bees are low- not many were caught of certain species. 
-#Here, I have filtered out the species where the count is greater than or equal to 5. 
+#I have filtered out the species where the count is greater than or equal to 5. 
 Bumble_count <- bumblebee_adj %>%
   group_by(GenusSpecies) %>%
   summarize(occ = n()) %>%
   ungroup() %>%
   filter(occ >= 5)
-
+#I have filtered out the species where the count is greater than or equal to 10.
 Bumble_count_more <- bumblebee_adj %>%
   group_by(GenusSpecies) %>%
   summarize(occ = n()) %>%
@@ -79,13 +114,7 @@ sort(unique(bumblebee_adj$GenusSpecies))
 sort(unique(Bumble_count$GenusSpecies))
 sort(unique(Bumble_count_more$GenusSpecies))
 
-bumbles_to_keep <- c(
-  "Bombus californicus", "Bombus fernaldae", "Bombus flavidus",
-  "Bombus flavifrons", "Bombus insularis", "Bombus melanopygus",
-  "Bombus mixtus", "Bombus sitkensis", "Bombus vancouverensis",
-  "Bombus vosnesenskii"
-)
-
+#decided that it would be better to keep bumble bees where the occurrence is greater than or equal to 10
 less_bumbles_to_keep <- c(
   "Bombus californicus",
   "Bombus flavifrons", "Bombus melanopygus",
@@ -98,20 +127,37 @@ less_bumbles_to_keep <- c(
 #names in the bumblebee_adj data frame.
 bumblebees_adj <- bumblebee_adj %>%
   filter(GenusSpecies %in% less_bumbles_to_keep)
-
-#fortuitously, there are now only 10 bumble bee species which are being kept!
+#verifying that the bumble bees are the correct species
 sort(unique(bumblebees_adj$GenusSpecies))
-#the graphs are not working
+#turn the Year values into numerics to be able to graph
 bumblebees_adj$Year <- as.numeric(bumblebees_adj$Year)  
 
 ```
-
+Originally, there were 16 bumble bee species, but only 10 appeared in the data set at least 5 times and 6 at least 10 times. To conduct more relevant analysis on species that are assumed to be more abundant, data were filtered to only include these six species. 
 ```{r}
-#the bumblebees_adj data did not have the complex data- here, we are telling R to
-#create a new column using mutate, creating a new column called "Complex", and
-#in the complex column, we are assigning the values to correspond with data in
-#the site column, such that when there is a certain site, it gets assigned its
-#corresponding complex name.
+count_cali <-bumblebees_adj %>%
+  filter(GenusSpecies=="Bombus californicus")
+print(paste( "Bombus californicus count is",nrow(count_cali)))
+count_flav <-bumblebees_adj %>%
+  filter(GenusSpecies=="Bombus flavifrons")
+print(paste( "Bombus flavifrons count is",nrow(count_flav)))
+count_mel <-bumblebees_adj %>%
+  filter(GenusSpecies=="Bombus melanopygus")
+print(paste( "Bombus melanopygus count is",nrow(count_mel)))
+count_mixt <-bumblebees_adj %>%
+  filter(GenusSpecies=="Bombus mixtus")
+print(paste( "Bombus mixtus count is",nrow(count_mixt)))
+count_van <-bumblebees_adj %>%
+  filter(GenusSpecies=="Bombus vancouverensis")
+print(paste( "Bombus vancouverensis count is",nrow(count_van)))
+count_vos <-bumblebees_adj %>%
+  filter(GenusSpecies=="Bombus vosnesenskii")
+print(paste( "Bombus vosnesenskii count is",nrow(count_vos)))
+```
+The bumble bee that appears the most in the data set are *Bombus vancouverensis* with a total count of 99, followed by *Bombus mixtus* with a total count of 98. The bumble bee with the least observations is *Bombus californicus* with a total count of 18. 
+```{r}
+#the bumblebees_adj data did not have the complex data- here a new column is created using mutate, creating a new column called "Complex", and in the complex column, the values that correspond with data in the site column are assigned.
+
 bumblebees_adj <- bumblebees_adj %>%
   mutate(Complex = case_when(
     Site %in% c("CPB", "CPM", "CPR", "CPS") ~ "Carpenter",
@@ -120,3 +166,263 @@ bumblebees_adj <- bumblebees_adj %>%
     TRUE ~ "Other"
   ))
 ```
+
+**Graphing**
+
+In the bumble bee adjacency matrix, various network metrics were calculated using the makeNets function as generated by the bipartite function nested within. However, to answer my question, I only decided to choose five informative metrics to investigate. Based off of their definitions, I chose these metrics as I think that they best represent metrics that could inform me about changes in bumble bee network dynamics under the premise of climate change induced effects. Using logical reasoning, I wanted to choose metrics that I thought would best inform me broadly about changes in network health, as well as more behaviorally, such as changes in feeding stereotypes; for example, investigating changes in specialization and generalization. Assuming that the meadows might experience phenological mismatch, understanding what’s there compared to what bumble bees use is an informative metric, as if there are no observed changes, then I might assume that changes in resource availability is not influencing foraging patterns to a significant extent for bumble bee species. As with these data I am not investigating phenological mismatch specifically, I hope that these metrics can act as a proxy to draw basic conclusions through the scope of the metric investigated. These five metrics were:
+
+-PDI: Estimate of species generalization (0) and specialization (1)[@PDI_Poisot_2011]
+
+-PSI: Proportion of pollinator relevance to the pollination efficiency it provides to plants based on proportions of pollinator plant visits compared to plants to visit: low values indicate no effect on pollinator to network
+
+-Species strength: species relevance across all of its partners [@Species_Strength_Bascompte_2006]
+
+-Effective partners: partners that an individual would have if all the partners were equal; a proxy for partner diversity [@Effective_Partners_Bersier_2002]
+
+-Closeness: Species centrality; importance of species to the network as depicted by a closeness metric 
+
+Change in these metrics throughout time could be impacted by changes in resource availability and climate-induced changes in species interactions. Through investigating changes in these metrics, I investigate broad network dynamics – such as closeness, species strength, and effective partners –, as well as species level individualistic metrics – such as PSI and PDI – to formulate a more informative understanding about changes in the network. 
+
+To test for significance in changes in these network metrics across time, linear mixed effects models were run. These linear mixed effect models were constructed using the lme4 package and lmer() function in R. Each response (closeness, species strength, effective partners, PSI, and PDI) was tested in the function, with select random effects:Genus species and Site. The model investigates change in each metric throughout time- Year-, by complex. Here, I assure that the model's predictions are tested for each site and that each site is considered its own unique condition. The data frame “bumblebees_adj” were the data applied to the function. Level of significance were generated using the model. I decided a significance level less than 0.05 represents significance. 
+
+Running these models with these random effects controls for pseudoreplications that are generated by only using the lm function in ggplot. It incorporates variation between sites and species which ggplot geom_smooth does not incorporate. This is important as this variation could impact the results as I expect unaccounted variation between sites- as site composition differs-, species- as different species may behave differently-, and year- as each year varies. However, trend lines are still generated using geom_smooth as they still represent overall trends in data throughout time. 
+
+
+```{r}
+#Effective Partners
+ggplot(data= bumblebees_adj, aes( x = Year, y = effective.partners, color = Site, shape = GenusSpecies))+
+  geom_jitter()+
+  geom_smooth(aes(group = Complex, linetype = Complex), method = "lm", formula = y ~ x, color = "black") + #generates trend line for each complex
+  scale_linetype_manual(values = c("Carpenter" = "solid", "Frissell" = "solid", "Lookout" = "solid"))+
+  scale_x_continuous(breaks=seq(2011, 2024, by=2))+
+  facet_wrap(~ Complex)+
+  theme_minimal()+
+  theme(strip.text = element_text(size = 14, face = "bold"),
+        axis.title.x = element_text(size= 14, face = "bold"),
+        axis.title.y = element_text(size=14, face = "bold"), 
+        legend.title = element_text(size = 14), 
+        legend.text = element_text(size = 12),
+        axis.text.x = element_text( size = 8),
+        axis.text.y = element_text(size = 10))+
+  labs(y = "Effective Partners", shape = "Bumble bees")+
+  scale_shape_discrete(labels = c(expression(italic("Bombus californicus")),
+                                  expression(italic("Bombus flavifrons")),
+                                  expression(italic("Bombus melanopygus")),
+                                  expression(italic("Bombus mixtus")),
+                                  expression(italic("Bombus vancouverensis")),
+                                  expression(italic("Bombus vosnesenskii")))) +
+  guides(linetype = "none") #removes the line legend
+effective_partners_model <- lmer(effective.partners ~ scale(Year)*Complex + (1|GenusSpecies) + (1|Site), data = bumblebees_adj) #used a linear mixed effects model, setting analysis for year to each complex and setting Genus species and Site as random effects; each complex is compared to Carpenter complex
+summary(effective_partners_model)
+```
+
+```{r}
+#PSI
+ggplot(data= bumblebees_adj, aes( x = Year, y = PSI, color = Site, shape = GenusSpecies))+
+  geom_jitter()+
+  geom_smooth(aes(group = Complex, linetype = Complex), method = "lm", formula = y ~ x, color = "black") +
+  scale_linetype_manual(values = c("Carpenter" = "dashed", "Frissell" = "dashed", "Lookout" = "dashed"))+
+  scale_x_continuous(breaks=seq(2011, 2024, by=2))+
+  facet_wrap(~ Complex)+
+  theme_minimal()+
+  theme(strip.text = element_text(size = 14, face = "bold"),
+        axis.title.x = element_text(size= 14, face = "bold"),
+        axis.title.y = element_text(size=14, face = "bold"), 
+        legend.title = element_text(size = 14), 
+        legend.text = element_text(size = 12),
+        axis.text.x = element_text( size = 8),
+        axis.text.y = element_text(size = 10))+
+  labs(y = "PSI", shape = "Bumble bees")+
+  scale_shape_discrete(labels = c(expression(italic("Bombus californicus")),
+                                  expression(italic("Bombus flavifrons")),
+                                  expression(italic("Bombus melanopygus")),
+                                  expression(italic("Bombus mixtus")),
+                                  expression(italic("Bombus vancouverensis")),
+                                  expression(italic("Bombus vosnesenskii"))))+
+  guides(linetype = "none")
+PSI_model <-lmer(PSI ~ scale(Year)*Complex + (1|GenusSpecies) + (1|Site), data = bumblebees_adj)
+summary(PSI_model)
+#used a linear mixed effects model; each complex is compared to Carpenter complex
+```
+
+```{r}
+#PDI
+ggplot(data= bumblebees_adj, aes( x = Year, y = PDI, color = Site, shape = GenusSpecies))+
+  geom_jitter()+
+  geom_smooth(aes(group = Complex, linetype = Complex), 
+                  method = "lm", formula = y ~ x, color = "black") +
+  scale_linetype_manual(values = c("Carpenter" = "solid", "Frissell" = "solid", "Lookout" = "solid"))+
+  scale_x_continuous(breaks=seq(2011, 2024, by=2))+
+  facet_wrap(~ Complex)+ 
+  theme_minimal()+
+ theme(strip.text = element_text(size = 14, face = "bold"),
+        axis.title.x = element_text(size= 14, face = "bold"),
+        axis.title.y = element_text(size=14, face = "bold"), 
+        legend.title = element_text(size = 14), 
+        legend.text = element_text(size = 12),
+        axis.text.x = element_text( size = 8),
+        axis.text.y = element_text(size = 10))+
+  labs(y = "PDI", shape = "Bumble bees")+
+  scale_shape_discrete(labels = c(expression(italic("Bombus californicus")),
+                                  expression(italic("Bombus flavifrons")),
+                                  expression(italic("Bombus melanopygus")),
+                                  expression(italic("Bombus mixtus")),
+                                  expression(italic("Bombus vancouverensis")),
+                                  expression(italic("Bombus vosnesenskii"))))+
+  guides(linetype = "none") #removes the line legend
+
+PDI_model <-lmer(PDI ~ scale(Year)*Complex + (1|GenusSpecies) + (1|Site), data = bumblebees_adj)
+summary(PDI_model)
+#used a linear mixed effects model; each complex is compared to Carpenter complex
+```
+
+```{r}
+#Closeness
+ggplot(data= bumblebees_adj, aes( x = Year, y = closeness, color = Site, shape = GenusSpecies))+
+  geom_jitter()+
+  geom_smooth(aes(group = Complex, linetype = Complex), method = "lm", formula = y ~ x, color = "black") +
+  scale_linetype_manual(values = c("Carpenter" = "dashed", "Frissell" = "dashed", "Lookout" = "dashed"))+
+  scale_x_continuous(breaks=seq(2011, 2024, by=2))+
+  facet_wrap(~ Complex)+
+  theme_minimal()+
+  theme(strip.text = element_text(size = 14, face = "bold"),
+        axis.title.x = element_text(size= 14, face = "bold"),
+        axis.title.y = element_text(size=14, face = "bold"), 
+        legend.title = element_text(size = 14), 
+        legend.text = element_text(size = 12),
+        axis.text.x = element_text( size = 8),
+        axis.text.y = element_text(size = 10))+
+  labs(y = "Closeness", shape = "Bumble bees")+
+  scale_shape_discrete(labels = c(expression(italic("Bombus californicus")),
+                                     expression(italic("Bombus flavifrons")),
+                                     expression(italic("Bombus melanopygus")),
+                                     expression(italic("Bombus mixtus")),
+                                     expression(italic("Bombus vancouverensis")),
+                                     expression(italic("Bombus vosnesenskii"))))+
+  guides(linetype = "none") #removes the line legend
+Closeness_model <-lmer(closeness ~ scale(Year)*Complex + (1|GenusSpecies) + (1|Site), data = bumblebees_adj)
+summary(Closeness_model)
+#used a linear mixed effects model; each complex is compared to Carpenter complex
+```
+
+```{r}
+#Species Strength
+ggplot(data= bumblebees_adj, aes( x = Year, y = species.strength, color = Site, shape = GenusSpecies))+
+  geom_jitter()+
+  geom_smooth(aes(group = Complex, linetype = Complex), method = "lm", formula = y ~ x, color = "black") +
+  scale_linetype_manual(values = c("Carpenter" = "solid", "Frissell" = "solid", "Lookout" = "solid"))+
+  scale_x_continuous(breaks=seq(2011, 2024, by=2))+
+  facet_wrap(~ Complex)+
+  theme_minimal()+
+  theme(strip.text = element_text(size = 14, face = "bold"),
+        axis.title.x = element_text(size= 14, face = "bold"),
+        axis.title.y = element_text(size=14, face = "bold"), 
+        legend.title = element_text(size = 14), 
+        legend.text = element_text(size = 12),
+        axis.text.x = element_text( size = 8),
+        axis.text.y = element_text(size = 10))+
+  labs(y = "Species Strength", shape = "Bumble bees")+
+  scale_shape_discrete(labels = c(expression(italic("Bombus californicus")),
+                                  expression(italic("Bombus flavifrons")),
+                                  expression(italic("Bombus melanopygus")),
+                                  expression(italic("Bombus mixtus")),
+                                  expression(italic("Bombus vancouverensis")),
+                                  expression(italic("Bombus vosnesenskii"))))+
+  guides(linetype = "none")
+Species_strength_model <-lmer(species.strength ~ scale(Year)*Complex + (1|GenusSpecies) + (1|Site), data = bumblebees_adj)
+summary(Species_strength_model)
+#used a linear mixed effects model; each complex is compared to Carpenter complex
+ggsave("C:/Users/Owner/Documents/UO Master's/Classes/Data Science Eco Conserv/Final Project/graphs_p_values/Species_Strength_noP.jpg", plot = last_plot(), width = 12, height = 8,dpi = 300)
+```
+
+Significant changes in the metrics calculated throughout the period of the data are represented as solid lines in the plot, whereas insignificance is represented as dashed lines in the plot. 
+
+# **Results**
+
+The significant metrics were:
+
+-PDI
+
+-Species Strength
+
+-Effective Partners
+
+**Effective Partners**
+```{r}
+summary(effective_partners_model)
+```
+Not all complexes show a significant relationship across years and changes in effective partners: scale(Year) =0.98. This suggests that it cannot be reliably stated that effective partners have changed significantly across the complexes. However, there is significant variation between each complex and the variation at each complex per year compared to the baseline comparison of Carpenter complex. This is represented in Frissell and Lookout.  
+
+Frissell: 0.04, slope : -0.39
+
+Frissell has a significant negative slope.
+
+Lookout: 0.04, slope :-0.41
+
+Lookout has a significant negative slope. 
+
+Comparing these slopes to Carpenter, which has a slight positive slope, the significance accounted for the variation in the slopes of Frissell and Lookout make logical sense considering these two sites show a negative relationship. It can be assumed that the sites Frissell and Lookout are not similar to Carpenter for this network metric. However, if these sites were compared to Frissell, it might be expected that Frissell and Lookout would not be significantly different; we can assume that these two sites might be similar in composition in the scope of each meadow's impact on this metric. Overall, there is variation in effective partners, which is significant compared to the null of 0: Intercept = 4.42x10-4
+
+
+
+**PSI**
+```{r}
+summary(PSI_model)
+```
+PSI has not changed significantly across all sites, and there is no significant difference in PSI between years compared across each site. PSI is significantly different from the value we would expect from the null; however, there is no significant change in this metric throughout time. Generally, there appears to be a slight positive slope in both Carpenter and Frissell, with a slight negative slope in Lookout; however, the sites do not significantly differ from one another. 
+
+**PDI**
+```{r}
+summary(PDI_model)
+```
+All complexes show a significant relationship across years and changes in PDI: Intercept = 0.02. Carpenter, Frissell, and Lookout all show slopes that vary significantly when compared to the null: scale(Year) = 0.03. Carpenter and Lookout both have negative slopes; there is significant variation between Frissell compared to Carpenter, with a positive trend for Frissell, compared to a negative trend observed in Carpenter. 
+
+Frissell: 0.04, slope : 0.02
+
+The variation between year in Frissell significantly differs between the variation per year observed compared to Carpenter. From these results, the variation in PDI across the years is significant throughout all sites despite the variation not being significant between each year of Carpenter compared to every site (ex. Lookout does not have significant variation between years compared to the variation observed in Carpenter-- Carpenter and Lookout are assumed to be similar in this metric, whereas Frissell differs).
+
+**Closeness**
+```{r}
+summary(Closeness_model)
+```
+Closeness has not changed significantly across all sites, and there is no significant difference in closeness between years compared across each site. Closeness is significantly different from the value we would expect from the null; however, there is no significant change in this metric throughout time. Generally, there appears to be a slight negative slope in both Carpenter and Frissell, with an almost zero slope in Lookout; however, the sites do not significantly differ from one another.
+
+**Species Strength**
+```{r}
+summary(Species_strength_model)
+```
+
+There is significance across all the sites with a significant change in species strength across all sites: scale(Year)=0.04. There is also a significance in the value of species strength; the value is not what would be expected by the null: Intercept = 0.02. While each complex shows significant changes in species strength throughout the years, each site's variation does not significantly differ from the variation observed in Carpenter throughout the years. Comparing the graphs, each site has a negative slope; the model suggests that Frissell has a slight more positive slope compared to the slope of Carpenter. 
+
+# **Discussion**
+
+The only network metrics that appears to be significantly changing throughout the 10 years of data collected are effective partners, species strength, and PDI. 
+
+**Effective partners**
+
+Effective partners, a metric of partners that pollinators would have if all the partners were equal, was not a metric that appeared to be significantly changing throughout the years across all the complexes; however, there was observed significant variation in the slopes of the complexes Frissell and Lookout. Inspecting the slope, it appears that Frissell and Lookout both have a negative slope compared to Carpenter's slope. More generally, this suggests that the number of partners that bumble bees have in these complexes have been reducing; bumble bees overall are not visiting the same species, and the species that they are visiting appears to be more selective (despite trends observed in PDI), not necessarily indicating higher selectivity, but maybe a reduction in the floral options available to partners. If phenological mismatch is resulting in offset periods of peak bloom and peak bumble bee foraging, there is the potential that bumble bees are missing peak bloom periods of certain floral species, reducing the diversity of foraging choices as these flowers might be dying off during the foraging period. However, Carpenter complex appears to have a positive slope; the variation between these three complexes is not well understood, but some postulations can be made. Carpenter complex is the one complex not impacted by the Lookout fire that occurred in 2023; therefore, habitat composition might vary between Carpenter and Lookout and Frissell because of this, but in what ways has not been investigated. A cavaet to this suggestion is that 2023 is late in the data set- the data set goes from 2011 to 2024. It seems unreasonable to suggest that the variation observed is only due to the fire that happened in 2023. However, it seems like a factor that should be considered for future studies. Frissell and Lookout are closer to each other compared to the distance between Carpenter and Frissell and Carpenter and Lookout. Though in the same mountain range, there might also be unaccounted for variation between these cites that could be impacting this relationship observed.  
+
+Within each of these sites there is documentation of invasive species. While not investigated in this study, potential bumble bee preference for these invasives could also impact the dynamics observed in these graphs. If bumble bees have a preference for these invasive species, or if these invasive species persist longer than other floral resources, then the changes in effective partners might be explained, as bumble bees would be foraging on this resource later into the season if there is phenological mismatch, reducing the number of partners that bumble bees forage on. It is important to consider species variation in this context and think about how preferences could impact bumble bee foraging decisions. 
+
+**Species strength**
+
+Changes in species strength across all the complexes for all the years was significant, suggesting that species relevance across all of its partners is changing throughout time. Observed through the slopes, species strength is decreasing across all the complexes, yet the complexes do not vary significantly from the slope of Carpenter. This suggests that these bumble bees are reducing in their relevance to the network; their contributions to the network might be changing over time. As species strength reaches 0, it might be expected that bumble bees are reducing their foraging necessity to the network. This trend is of concern as bumble bees are considered highly impactful and important foragers maintaining the persistence of healthy meadows. In contrast to PSI, which did not show any signficance in changes across time, PSI generally does show an increase in the effect the pollinator has in the network; bumble bees are contributing greater to the transfer of pollen between plants and are efficiently contributing to pollination- this positive slope was only observed in Carpenter and Frissell, whereas a negative relationship was observed in Lookout. However, the change over time for PSI was not considered significant, confusing my understanding of the results of species strength. It would be expected that with reduced relevance, I would also expect to see a reduction in PSI; however, PSI must only suggest that bumble bees are still effectively pollinating. Their contribution to the network as a whole is reducing. Logically thinking, this could again be because of phenological mismatch- if bumble bees are not hitting peak bloom, then they are not able to contribute to the health of the network as much as other pollinators are whose foraging abundance might correlate with peak floral abundance. In previous research investigating climate change and phenological mismatch, flower density has reduced, which can negatively impact bumble bee health as secondary extinctions can occur in bumble bees if floral resources are not pollinated, and therefore go extinct themselves [@martin_diversified_2025]. In previous research there was an observed increase in network modularity, which is suspected to help offset the negative impacts of reduced density[@martin_diversified_2025]; it would be informative to investigate this metric in future research.  
+
+**PDI**
+
+Overall, bumble bees have significantly changed their degree of specialization/generalization throughout the years. Carpenter and Lookout do not significantly vary, but Frissell significantly varies from Carpenter. In Carpenter and Lookout, bumble bees appear to be following more generalist tendencies. This suggests that previously observed specialist tendencies are shifting to more generalist tendencies, which further suggests that bumble bees are able to switch resource usage and are not ossified in their foraging tendencies- implications for potential behavioral plasticity which might offset the negative impacts of climate change and phenological mismatch, as has been suggested in previous research [@millerstruttmann_climate_2022]. Therefore, it might be assumed that bumble bees in these complexes are able to appropriately adapt to changes in local foraging conditions, potentially maximizing foraging. This could be an indicator of overall species persistence if individuals are able to better maximize opportunities [@ponisio2017opportunistic], [@millerstruttmann_climate_2022]. However, Frissell has a significant positive slope; bumble bees at this complex appear to show more specialist tendencies throughout the years. An important consideration is that floral diversity and composition differs across these sites. While not investigated in this study, the composition between each site might be significant enough to disrupt the relationship between past and current bumble bee foraging tendencies. Overall however, changes in this metric seem to suggest that bumble bees display foraging plasticity, and are not ossified in being generalists or specialists as strictly. While bumble bee tongue length has been considered a limiting morphological characteristic which impacts bumble bee foraging specialization, previous research conducted in high elevation meadows in Colorado observed that morphological variation in tongue length wasn't a significant driver of observed foraging variation throughout a years long study, suggesting that the modularity observed in their network reconstructions must be a result of other morphological or behavioral variation[@martin_diversified_2025]. 
+
+A variety of factors could be at play which could have impacted the dynamics observed from this analysis; I will not be able to confidently claim one to be stronger than the other given my limited knowledge on the system, but these are ideas to consider which might help explain the observed variation. Each meadow complex is separated by a mosaic of habitat conditions. Bumble bee movement estimates vary across species, but generally have been observed to have a max disperal of 2 km (reviewed by [@foraging_across_lifestages_Mola_2025]). Habitat structure might also impact bumble bee dispersal capabilities [@mola_forests_2020], [@kembro_bumblebees_2019], [@Effects_habitat_Redhead_2016], [@dist_ele_envi_Jackson_2018]; various forest barriers, elevation changes, and degree of floral resources along exploitative foraging routes are just some factors that could impact bumble bee dispersal capabilities. Therefore, I do not expect bumble bee movement to be occurring between each meadow complex given the distance between each complex and habitat composition of the area; therefore, these populations are loosely isolated, suggesting that this degree of isolation could result in different dynamics being observed. These habitats might also vary in structure; from anecdotal experience of working at HJA, there are a subset of floral species that are only expected to be found at one complex, or even more narrowly at one site. This creates more variation in the system and could impact network dynamics in ways not understood, as while variation in species composition not only changes richness of the complexes, there could also be various other phenological dynamics at play; plant phenology may vary across species as well, with some acting as early bloomers and others as late bloomers. Therefore distance, variation in elevation, and complex habitat composition could have a bigger role in influencing network dynamics than considered in this analysis. 
+
+**Future Directions**
+
+To truly investigate changes in foraging patterns of bumble bees as well as bumble bee adaptability to changes in floral richness, abundancy, bloom period, or density, other analyses need to be conducted. Initially, understanding bumble bee foraging behaviors might be the best place to start. 
+For future investigation, I can conduct change point analysis. Previous work by [@ponisio2017opportunistic], has investigated opportunistic attachment processes in plant-pollinator networks [@ponisio2017opportunistic]. Opportunistic attachment suggest that generalist species, when context changes and different resources are available, switch opportunistically to foraging on different resources rather than sticking to one or a set of predictable and consistent resources [@ponisio2017opportunistic]. Compared to preferential attachment, in a network experiencing opportunistic attachment, it is predicted that network nestedness does not generate through time as individuals are changing their resource usage creating novel interactions, which has been investigated through species turn over [@ponisio2017opportunistic]. In this system, change points- which are changes in modules in a network, including both formation of modules and dissolving of modules- can act as an indicator of opportunistic attachment[@ponisio2017opportunistic]. To test for opportunistic attachment, Ponisio et al., investigated significant reorganizations in network assembly, variability in network position for each species, as well as turnover throughout time for these species investigated [@ponisio2017opportunistic]. Conducting this analysis on HJA data could help explain the almost contradictory findings in PDI metrics compared to the findings in effective partners. Understanding to what degree bumble bees are shifting resource usage, and if there is a tendancy for bumble bees to shift resource usage based on availability, as well as investigating these changes throughout time, could help me better understand why data suggest that bumble bees are becoming more generalist, but have reduced effective partners. If the ability to swith resources acts as an indicator of species persistence, conclusions drawn from this metric also could inform us about the health of the network more informatively or at least from a different perspective. 
+
+Furthermore, previous studies have indicated that bumble bees can expand foraging ranges, and are impacted by climate, which has induced range shifts as bumble bee species colonize higher elevations ([@mola_forests_2020], [@millerstruttmann_climate_2022], [@kembro_bumblebees_2019]). In these high elevation meadows, a forest fire struck in 2023 and burned complexes Frissell and Lookout. Bumble bee fitness is most strongly impacted by floral abundance, diversity, and density, which increases in moderate fire severity landscapes as well as landscapes with a mosaic of fire severity [@fireflowerabndcbenifbumb], [@ponisio2016pyrodiversity],[@wildfiretranschange], [@firebodysizeshifts]. Lengthened phenology of bursts of aggregated floral blooms in burned conditions provide bumble bees with resources later into the season as blooms in non-burned forests and meadows senescence, supporting colony health and fitness longer into the season [@beedivfireseverity]. Bumble bees are highly resourceful and show the capacity to seek more nutrient rich resources in the face of resource scarcity[@nucbumblebee], potentially promoting foraging range expansion across fire regimes and meadow complexes [@fireflowerabndcbenifbumb]. Colony uniqueness at foraging sites [@wildfiretranschange], species niche overlap and coexistence has been observed in various fire severity regimes [@ponisio2016pyrodiversity]. These results suggest that bumble bees show the capacity to expand foraging ranges, which in burned conditions might benefit bumble bees and offset the negative impacts of reduced flower availability or density. Studying bumble bee movement is therefore relevant as this movement could counteract the negative impacts of phenological mismatch. Understanding how this varies across complexes could generate a framework to base predictions on bumble bee foraging range shifts between burned and unburned conditions.   
+
+Lastly, this study did not specifically conduct analysis on phenological mismatch. Modifying methodology from [@millerstruttmann_climate_2022], understanding if phenological mismatch is observed in these meadows would be key to verify conclusions drawn from this analysis. To do this, analysis on day to first bloom, bloom length, days of peak floral abundance, first bumble bee emergence, days of peak bumble bee abundance, and day of flower die off will have to be complied and analyzed to understand significant shifts in timing [@millerstruttmann_climate_2022]. This could be conducted with HJA data, as bumble bee emergence could be estimated from day of first bumble bee caught, and considering bloom status is documented, changes in flower availability can also be analyzed. 
+
+Overall, this study takes the network perspective to analyze complex ecological theory. Further breaking down changes in these meadows could highly inform researchers about the imapct of changing conditions on plant-pollinator dynamics. Then, can intitatives be put in place to help perserve and protect these ecosystmes from further harm. 
+
+# **Bibliography**
